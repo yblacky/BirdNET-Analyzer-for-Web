@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BirdNET Local Analyzer</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <h1>BirdNET Local Analyzer</h1>
+
+      <div class="grid">
+        <!-- SETTINGS -->
+        <div class="card">
+          <h2>Input</h2>
+
+          <div class="field">
+            <label for="audioFile">Audio file</label>
+            <div class="file-upload">
+              <button id="fileBtn" type="button">Select an audio file</button>
+              <span id="fileName">No file selected</span>
+              <input id="audioFile" type="file" accept="audio/*" hidden />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="language">Target language</label>
+            <select id="language"></select>
+          </div>
+
+          <hr style="border-color: #333; margin: 16px 0" />
+
+          <div class="field">
+            <label>Zeitfilter</label>
+            <select id="timeMode">
+              <option value="none" selected>No filter</option>
+              <option value="date">Date</option>
+              <option value="week">Calendar Week</option>
+            </select>
+          </div>
+
+          <div class="field" id="dateField" style="display: none">
+            <label for="recordingDate">Recording Date</label>
+            <input id="recordingDate" type="date" />
+          </div>
+
+          <div class="field" id="weekField" style="display: none">
+            <label for="week">Calendar Week (1–52)</label>
+            <input id="week" type="number" min="1" max="52" />
+          </div>
+
+          <hr style="border-color: #333; margin: 16px 0" />
+
+          <div class="field">
+            <label>Geolocation</label>
+            <select id="geoMode">
+              <option value="none" selected>No filter</option>
+              <option value="auto">Auto</option>
+              <option value="manual">Manual</option>
+            </select>
+          </div>
+
+          <div id="geoFields">
+            <div class="row">
+              <div class="field">
+                <label for="lat">Latitude</label>
+                <input id="lat" type="number" step="any" />
+              </div>
+
+              <div class="field">
+                <label for="lon">Longitude</label>
+                <input id="lon" type="number" step="any" />
+              </div>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top: 16px">
+            <div class="field">
+              <button id="analyzeBtn" type="button">Analyze</button>
+            </div>
+          </div>
+
+          <div id="status" class="status"></div>
+        </div>
+
+        <!-- AUDIO -->
+        <div class="card">
+          <h2>Audio</h2>
+
+          <div class="audio-wrap">
+            <div class="audio-player">
+              <button id="playToggle" class="play-btn">▶</button>
+
+              <div class="progress-wrap">
+                <input id="seekBar" type="range" min="0" max="100" value="0" />
+              </div>
+
+              <span id="currentTime">00:00</span>
+            </div>
+
+            <audio id="audioPlayer"></audio>
+
+            <div class="wave-wrap">
+              <canvas id="waveCanvas" width="900" height="240"></canvas>
+            </div>
+
+            <ul class="legend">
+              <li>Grey = Waveform</li>
+              <li>Blue = Position</li>
+              <li>Green = Recognized areas</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESULTS -->
+      <div class="card" style="margin-top: 20px">
+        <div class="results-head">
+          <h2>Result</h2>
+          <div id="resultsMeta" class="results-meta"></div>
+        </div>
+
+        <div id="results" class="results">
+          <div class="empty">No result.</div>
+        </div>
+      </div>
+
+      <!-- RAW JSON -->
+      <div class="card" style="margin-top: 20px">
+        <h2>Debug – Raw JSON</h2>
+
+        <pre id="rawJson" class="debug"></pre>
+      </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
