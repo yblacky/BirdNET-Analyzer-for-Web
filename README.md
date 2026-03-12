@@ -18,14 +18,8 @@ Follow the installation instructions there first.
 
 Structure:
 project/
-<<<<<<< HEAD
-├ birdnet-analyzer-for-web/ #This repo
+├ birdnet-analyzer-for-web/ #This repository
 └ BirdNET-Analyzer/
-=======
-├ birdnet-analyzer-for-web/ #This repo
-└ BirdNET-Analyzer/
-
-> > > > > > > master
 
 Then execute: `pip install -e ../BirdNET-Analyzer`
 
