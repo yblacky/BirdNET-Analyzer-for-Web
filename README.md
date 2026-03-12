@@ -17,9 +17,12 @@ https://github.com/birdnet-team/BirdNET-Analyzer
 Follow the installation instructions there first.
 
 Structure:
+
+```
 project/
-├ birdnet-analyzer-for-web/ #This repository
-└ BirdNET-Analyzer/
+├ birdnet-analyzer-for-web/           # This repository
+└ BirdNET-Analyzer/                   # https://github.com/birdnet-team/BirdNET-Analyzer
+```
 
 Then execute: `pip install -e ../BirdNET-Analyzer`
 
@@ -34,7 +37,7 @@ Bird species names come from the BirdNET label files. Put your needed language l
 Available labels:
 https://github.com/georg95/birdnet-web/tree/main/models/birdnet/labels
 
-#### **en_uk.txt** is required due it's the default language.
+The **en_uk.txt** label file is required due it's the default language.
 
 ---
 
