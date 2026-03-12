@@ -1,0 +1,337 @@
+:root {
+        --bg: #141414;
+        --panel: #1f1f1f;
+        --panel-2: #272727;
+        --text: #f3f3f3;
+        --muted: #b7b7b7;
+        --accent: #79c27b;
+        --accent-2: #5ea8ff;
+        --danger: #ff7a7a;
+        --border: #3a3a3a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .app {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      h1 {
+        margin: 0 0 16px;
+        font-size: 28px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 380px 1fr;
+        gap: 20px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px;
+      }
+
+      .card h2 {
+        margin: 0 0 14px;
+        font-size: 18px;
+      }
+
+      .field {
+        margin-bottom: 14px;
+      }
+
+      .field label {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      input[type="text"],
+      input[type="number"],
+      input[type="date"],
+      select,
+      input[type="file"],
+      button {
+        width: 100%;
+        border: 1px solid var(--border);
+        background: var(--panel-2);
+        color: var(--text);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+
+      input[type="checkbox"] {
+        transform: translateY(1px);
+      }
+
+      button {
+        cursor: pointer;
+        background: var(--accent);
+        color: #101010;
+        font-weight: 700;
+        border: none;
+      }
+
+      button.secondary {
+        background: var(--accent-2);
+        color: #08101c;
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .inline {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .audio-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      audio {
+        width: 100%;
+      }
+
+      .wave-wrap {
+        position: relative;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #101010;
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 240px;
+      }
+
+      .legend {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 8px;
+      }
+
+      .status {
+        margin-top: 12px;
+        min-height: 20px;
+        color: var(--muted);
+      }
+
+      .status.error {
+        color: var(--danger);
+      }
+
+      .results-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .results-meta {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .results {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .result-item {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        background: var(--panel-2);
+        cursor: pointer;
+      }
+
+      .result-item:hover {
+        border-color: #5e5e5e;
+      }
+
+      .result-main {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+
+      .species {
+        font-weight: 700;
+        font-size: 16px;
+      }
+
+      .species-sub {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .confidence {
+        font-weight: 700;
+        color: var(--accent);
+        white-space: nowrap;
+      }
+
+      .timing {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .empty {
+        color: var(--muted);
+        padding: 12px 0;
+      }
+
+      .pill {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: #323232;
+        color: #ddd;
+        font-size: 12px;
+        margin-left: 8px;
+      }
+
+      .audio-player {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--panel-2);
+      }
+
+      .play-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: none;
+        background: var(--accent);
+        font-size: 15px;
+        font-weight: bold;
+        cursor: pointer;
+        transition:
+          transform 0.1s,
+          filter 0.1s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .play-btn:hover {
+        transform: scale(1.05);
+        filter: brightness(1.1);
+      }
+
+      .play-btn:active {
+        transform: scale(0.95);
+      }
+
+      .progress-wrap {
+        flex: 1;
+      }
+
+      #seekBar {
+        width: 100%;
+        cursor: pointer;
+        appearance: none;
+        height: 4px;
+        background: #444;
+        border-radius: 2px;
+      }
+
+      #seekBar::-webkit-slider-thumb {
+        appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--accent);
+        cursor: pointer;
+      }
+
+      #seekBar::-moz-range-thumb {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: none;
+      }
+
+      #currentTime {
+        font-size: 13px;
+        color: var(--muted);
+        width: 45px;
+      }
+
+      .file-upload {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .file-upload button {
+        background: var(--accent-2);
+        border: none;
+        border-radius: 8px;
+        padding: 8px 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .file-upload button:hover {
+        filter: brightness(1.1);
+      }
+
+      #fileName {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .debug {
+        overflow: auto;
+        max-height: 400px;
+        background: #101010;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #333;
+        }
+
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }

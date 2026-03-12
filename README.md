@@ -18,8 +18,14 @@ Follow the installation instructions there first.
 
 Structure:
 project/
- ├ birdnet-analyzer-for-web/ #This repo
- └ BirdNET-Analyzer/
+<<<<<<< HEAD
+├ birdnet-analyzer-for-web/ #This repo
+└ BirdNET-Analyzer/
+=======
+├ birdnet-analyzer-for-web/ #This repo
+└ BirdNET-Analyzer/
+
+> > > > > > > master
 
 Then execute: `pip install -e ../BirdNET-Analyzer`
 
@@ -55,9 +61,8 @@ https://github.com/georg95/birdnet-web/tree/main/models/birdnet/labels
 
 The UI expects a BirdNET Analyzer backend exposing:
 
-* POST /api/analyze
-* GET /api/meta/languages
-
+- POST /api/analyze
+- GET /api/meta/languages
 
 ---
 
@@ -70,7 +75,6 @@ Example using a simple Python server:
 Then open:
 
 `http://localhost:9050`
-
 
 The UI will call the BirdNET Analyzer running on the same host.
 
