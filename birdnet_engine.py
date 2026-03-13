@@ -1,39 +1,57 @@
+import csv
+import inspect
+import logging
 import tempfile
 from pathlib import Path
-import csv
 from typing import Any
 
 from birdnet_analyzer.analyze import analyze
 
+from config import settings
 
-def analyze_audio(audio_path: str, lat=None, lon=None, week=None):
+logger = logging.getLogger(__name__)
 
+
+def analyze_audio(audio_path: str, lat=None, lon=None, week=None) -> list[dict[str, Any]]:
     with tempfile.TemporaryDirectory() as tmpdir:
+        candidate_kwargs: dict[str, Any] = {
+            "audio_input": audio_path,
+            "output": tmpdir,
+            "rtype": "table",
+            "min_conf": settings.min_confidence,
+            "sensitivity": settings.sensitivity,
+            "overlap": settings.overlap,
+            "merge_consecutive": settings.merge_consecutive,
+            "batch_size": settings.batch_size,
+            "threads": settings.threads,
+            "lat": lat,
+            "lon": lon,
+            "week": week,
+            "locale": settings.locale,
+        }
 
-        kwargs = {}
+        supported_params = set(inspect.signature(analyze).parameters.keys())
+        analyze_kwargs = {
+            key: value
+            for key, value in candidate_kwargs.items()
+            if key in supported_params and value is not None
+        }
 
-        if lat is not None:
-            kwargs["lat"] = lat
-        if lon is not None:
-            kwargs["lon"] = lon
-        if week is not None:
-            kwargs["week"] = week
-
-        analyze(
-            audio_input=audio_path,
-            output=tmpdir,
-
-            **kwargs,
-
-            min_conf=0.5, # Adjust this threshold as needed
-
-            merge_consecutive=True,
-            rtype="table"
+        ignored = sorted(
+            key
+            for key, value in candidate_kwargs.items()
+            if key not in analyze_kwargs and value is not None
         )
 
+        logger.info("BirdNET call kwargs=%s", analyze_kwargs)
+        if ignored:
+            logger.info("BirdNET ignored unsupported kwargs=%s", ignored)
+
+        analyze(**analyze_kwargs)
+
         files = list(Path(tmpdir).glob("*.selection.table.txt"))
-        
         if not files:
+            logger.warning("BirdNET produced no selection table for %s", audio_path)
             return []
 
         result_file = files[0]
@@ -59,6 +77,7 @@ def analyze_audio(audio_path: str, lat=None, lon=None, week=None):
                     start = float(start_raw)
                     end = float(end_raw)
                 except (TypeError, ValueError):
+                    logger.debug("Skipping invalid BirdNET row: %s", row)
                     continue
 
                 results.append(
@@ -71,7 +90,10 @@ def analyze_audio(audio_path: str, lat=None, lon=None, week=None):
                     }
                 )
 
-        return merge_detections(results)
+        logger.info("BirdNET raw detections=%s", len(results))
+        merged = merge_detections(results)
+        logger.info("BirdNET merged detections=%s", len(merged))
+        return merged
 
 
 def merge_detections(detections: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -84,13 +106,16 @@ def merge_detections(detections: list[dict[str, Any]]) -> list[dict[str, Any]]:
     for detection in detections[1:]:
         last = merged[-1]
 
-        same_species = detection["species"] == last["species"]
+        same_species = (
+            detection.get("species_code") == last.get("species_code")
+            or detection.get("species") == last.get("species")
+        )
 
-        gap_tolerance = 1.0  # seconds
-        close_enough = abs(detection["start"] - last["end"]) <= gap_tolerance
+        gap = float(detection["start"]) - float(last["end"])
+        close_enough = gap <= settings.merge_gap_tolerance_seconds
 
         if same_species and close_enough:
-            last["end"] = detection["end"]
+            last["end"] = max(last["end"], detection["end"])
             last["confidence"] = max(last["confidence"], detection["confidence"])
         else:
             merged.append(detection.copy())

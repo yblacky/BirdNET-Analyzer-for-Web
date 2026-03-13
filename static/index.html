@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,62 +7,97 @@
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <div class="app">
-      <h1>BirdNET Local Analyzer</h1>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <h1>BirdNET Local Analyzer</h1>
+        </div>
+      </header>
 
-      <div class="grid">
-        <!-- SETTINGS -->
-        <div class="card">
-          <h2>Input</h2>
+      <main class="app">
+        <section class="card card-upload">
+          <div class="upload-head">
+            <div class="upload-label">Audio Input</div>
+            <div id="supportedFormats" class="hint"></div>
+          </div>
 
-          <div class="field">
-            <label for="audioFile">Audio file</label>
-            <div class="file-upload">
-              <button id="fileBtn" type="button">Select an audio file</button>
-              <span id="fileName">No file selected</span>
-              <input id="audioFile" type="file" accept="audio/*" hidden />
+          <div id="dropZone" class="dropzone">
+            <div class="dropzone-icon">⤴</div>
+            <div class="dropzone-title">Drag audio here or choose a file</div>
+
+            <div class="upload-actions">
+              <button id="fileBtn" type="button" class="secondary">
+                Choose File
+              </button>
+
+              <input
+                id="audioFile"
+                type="file"
+                accept=".mp3,.wav,.m4a,.ogg,.flac,.aac"
+                hidden
+              />
             </div>
+
+            <div id="fileName" class="file-name">No file selected</div>
           </div>
+        </section>
 
-          <div class="field">
-            <label for="language">Target language</label>
-            <select id="language"></select>
-          </div>
+        <div class="grid">
+          <section class="card">
+            <div class="card-head">
+              <h2>Analysis Settings</h2>
+            </div>
 
-          <hr style="border-color: #333; margin: 16px 0" />
+            <div class="field-grid">
+              <div class="field">
+                <label for="language">Species Labels</label>
+                <select id="language"></select>
+              </div>
 
-          <div class="field">
-            <label>Time filters</label>
-            <select id="timeMode">
-              <option value="none" selected>No filter</option>
-              <option value="date">Date</option>
-              <option value="week">Calendar Week</option>
-            </select>
-          </div>
+              <div class="field">
+                <label for="confidenceThreshold">Min. Confidence</label>
+                <div class="range-row">
+                  <input
+                    id="confidenceThreshold"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="45"
+                  />
+                  <span id="confidenceThresholdValue">45%</span>
+                </div>
+              </div>
 
-          <div class="field" id="dateField" style="display: none">
-            <label for="recordingDate">Recording Date</label>
-            <input id="recordingDate" type="date" />
-          </div>
+              <div class="field">
+                <label for="timeMode">Time Filter</label>
+                <select id="timeMode">
+                  <option value="none" selected>None</option>
+                  <option value="date">Recording Date</option>
+                  <option value="week">Calendar Week</option>
+                </select>
+              </div>
 
-          <div class="field" id="weekField" style="display: none">
-            <label for="week">Calendar Week (1–52)</label>
-            <input id="week" type="number" min="1" max="52" />
-          </div>
+              <div class="field hidden" id="dateField">
+                <label for="recordingDate">Recording Date</label>
+                <input id="recordingDate" type="date" />
+              </div>
 
-          <hr style="border-color: #333; margin: 16px 0" />
+              <div class="field hidden" id="weekField">
+                <label for="week">Calendar Week</label>
+                <input id="week" type="number" min="1" max="53" />
+              </div>
 
-          <div class="field">
-            <label>Geolocation</label>
-            <select id="geoMode">
-              <option value="none" selected>No filter</option>
-              <option value="auto">Auto</option>
-              <option value="manual">Manual</option>
-            </select>
-          </div>
+              <div class="field">
+                <label for="geoMode">Location Filter</label>
+                <select id="geoMode">
+                  <option value="none" selected>None</option>
+                  <option value="auto">Use Current Location</option>
+                  <option value="manual">Enter Coordinates</option>
+                </select>
+              </div>
+            </div>
 
-          <div id="geoFields">
-            <div class="row">
+            <div id="geoFields" class="row hidden mt-12">
               <div class="field">
                 <label for="lat">Latitude</label>
                 <input id="lat" type="number" step="any" />
@@ -73,67 +108,113 @@
                 <input id="lon" type="number" step="any" />
               </div>
             </div>
-          </div>
 
-          <div class="row" style="margin-top: 16px">
-            <div class="field">
-              <button id="analyzeBtn" type="button">Analyze</button>
+            <div class="action-row">
+              <button id="analyzeBtn" type="button" class="primary large-btn">
+                Start Analysis
+              </button>
             </div>
-          </div>
 
-          <div id="status" class="status"></div>
-        </div>
-
-        <!-- AUDIO -->
-        <div class="card">
-          <h2>Audio</h2>
-
-          <div class="audio-wrap">
-            <div class="audio-player">
-              <button id="playToggle" class="play-btn">▶</button>
-
-              <div class="progress-wrap">
-                <input id="seekBar" type="range" min="0" max="100" value="0" />
+            <div class="progress-card">
+              <div class="progress-head">
+                <span id="progressStage">Idle</span>
+                <span id="progressValue">0%</span>
               </div>
 
-              <span id="currentTime">00:00</span>
+              <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+              </div>
             </div>
 
-            <audio id="audioPlayer"></audio>
+            <div id="status" class="status"></div>
+          </section>
 
-            <div class="wave-wrap">
-              <canvas id="waveCanvas" width="900" height="240"></canvas>
+          <section class="card">
+            <div class="card-head">
+              <h2>Audio View</h2>
+              <div id="audioMeta" class="results-meta"></div>
             </div>
 
-            <ul class="legend">
-              <li>Grey = Waveform</li>
-              <li>Blue = Position</li>
-              <li>Green = Recognized areas</li>
-            </ul>
+            <div class="audio-wrap">
+              <div class="audio-player">
+                <button id="playToggle" class="play-btn" type="button">
+                  ▶
+                </button>
+
+                <div class="progress-wrap">
+                  <input
+                    id="seekBar"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="0"
+                  />
+                </div>
+
+                <span id="currentTime">00:00</span>
+              </div>
+
+              <audio id="audioPlayer"></audio>
+
+              <div class="spectrogram-wrap">
+                <div id="visualizerLoading" class="visualizer-loading hidden">
+                  <div class="spinner"></div>
+                  <div class="visualizer-loading-text">
+                    Rendering audio view...
+                  </div>
+                </div>
+
+                <canvas id="spectrogramCanvas" height="260"></canvas>
+                <canvas id="timelineCanvas" height="72"></canvas>
+              </div>
+
+              <ul class="legend">
+                <li>Spectrogram = frequency energy</li>
+                <li>Blue line = playhead</li>
+                <li>Bottom timeline = detections</li>
+              </ul>
+            </div>
+          </section>
+        </div>
+
+        <section class="card mt-20">
+          <div class="results-head">
+            <h2>Results</h2>
+            <div id="resultsMeta" class="results-meta"></div>
           </div>
-        </div>
-      </div>
 
-      <!-- RESULTS -->
-      <div class="card" style="margin-top: 20px">
-        <div class="results-head">
-          <h2>Result</h2>
-          <div id="resultsMeta" class="results-meta"></div>
-        </div>
+          <div id="results" class="results">
+            <div class="empty">No results.</div>
+          </div>
+        </section>
 
-        <div id="results" class="results">
-          <div class="empty">No result.</div>
-        </div>
-      </div>
+        <section class="card mt-20">
+          <div class="results-head">
+            <h2>Debug JSON</h2>
+            <div class="results-toolbar">
+              <button
+                id="exportJsonBtn"
+                type="button"
+                class="secondary small-btn"
+              >
+                Export JSON
+              </button>
 
-      <!-- RAW JSON -->
-      <div class="card" style="margin-top: 20px">
-        <h2>Debug – Raw JSON</h2>
+              <button
+                id="exportCsvBtn"
+                type="button"
+                class="secondary small-btn"
+              >
+                Export CSV
+              </button>
+            </div>
+          </div>
 
-        <pre id="rawJson" class="debug"></pre>
-      </div>
+          <pre id="rawJson" class="debug"></pre>
+        </section>
+      </main>
     </div>
 
-    <script src="/static/app.js"></script>
+    <script type="module" src="/static/app.js"></script>
   </body>
 </html>
