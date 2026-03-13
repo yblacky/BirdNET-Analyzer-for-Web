@@ -1,3 +1,5 @@
+import { getSpeciesImage } from "./wiki.js";
+
 export const el = {
   audioFile: document.getElementById("audioFile"),
   language: document.getElementById("language"),
@@ -23,8 +25,6 @@ export const el = {
   fileName: document.getElementById("fileName"),
   dropZone: document.getElementById("dropZone"),
   supportedFormats: document.getElementById("supportedFormats"),
-  confidenceThreshold: document.getElementById("confidenceThreshold"),
-  confidenceThresholdValue: document.getElementById("confidenceThresholdValue"),
   exportJsonBtn: document.getElementById("exportJsonBtn"),
   exportCsvBtn: document.getElementById("exportCsvBtn"),
   progressStage: document.getElementById("progressStage"),
@@ -84,20 +84,6 @@ export function updateGeoMode() {
   }
 }
 
-export function bindConfidenceLabel(onChange) {
-  const update = () => {
-    el.confidenceThresholdValue.textContent = `${el.confidenceThreshold.value}%`;
-    onChange?.();
-  };
-
-  el.confidenceThreshold.addEventListener("input", update);
-  update();
-}
-
-export function getConfidenceThreshold() {
-  return Number(el.confidenceThreshold.value) / 100;
-}
-
 export function setVisualizerLoading(isLoading, message = "Rendering audio view...") {
   if (!el.visualizerLoading) return;
 
@@ -113,7 +99,7 @@ export function setAudioMeta(text = "") {
   el.audioMeta.textContent = text;
 }
 
-export function renderResults(detections, onSelect) {
+export async function renderResults(detections, onSelect) {
   if (!detections.length) {
     el.resultsMeta.textContent = "";
     el.results.innerHTML = `<div class="empty">No results.</div>`;
@@ -132,6 +118,7 @@ export function renderResults(detections, onSelect) {
       return `
         <div class="result-item" data-index="${index}">
           <div class="result-main">
+            <img class="species-img" data-img="${index}" />
             <div class="result-text">
               <div class="species-row">
                 <div class="species">${localized}</div>
@@ -160,6 +147,22 @@ export function renderResults(detections, onSelect) {
       onSelect?.(detections[index]);
     });
   });
+
+  for (const item of el.results.querySelectorAll(".result-item")) {
+    const index = Number(item.dataset.index);
+    const det = detections[index];
+
+    const img = item.querySelector(".species-img");
+
+    const query = det.scientific_name || det.species;
+
+    await getSpeciesImage(query).then((url) => {
+      if (url && img) {
+        img.src = url;
+        img.classList.add("loaded");
+      }
+    });
+  }
 }
 
 export function setResultsMeta(filteredDetections, totalDetections) {

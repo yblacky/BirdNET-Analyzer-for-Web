@@ -1,4 +1,5 @@
 export function createVisualizer({ audioElement, spectrogramCanvas, timelineCanvas }) {
+
   const spectCtx = spectrogramCanvas.getContext("2d");
   const timelineCtx = timelineCanvas.getContext("2d");
 
@@ -9,7 +10,31 @@ export function createVisualizer({ audioElement, spectrogramCanvas, timelineCanv
   let detections = [];
   let duration = 0;
 
+  const FFT_SIZE = 2048;
+  const HOP = 256;
+  const BINS = FFT_SIZE / 2;
+
+  const MIN_DB = -90;
+  const MAX_DB = -25;
+
+  const MIN_FREQ = 800;
+  const MAX_FREQ = 12000;
+
+  const hann = new Float32Array(FFT_SIZE);
+  const real = new Float32Array(FFT_SIZE);
+  const imag = new Float32Array(FFT_SIZE);
+
+  const sinTable = new Float32Array(FFT_SIZE);
+  const cosTable = new Float32Array(FFT_SIZE);
+
+  for (let i = 0; i < FFT_SIZE; i++) {
+    hann[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (FFT_SIZE - 1)));
+    sinTable[i] = Math.sin(-2 * Math.PI * i / FFT_SIZE);
+    cosTable[i] = Math.cos(-2 * Math.PI * i / FFT_SIZE);
+  }
+
   function resizeCanvases() {
+
     const spectRect = spectrogramCanvas.getBoundingClientRect();
     spectrogramCanvas.width = Math.max(300, Math.floor(spectRect.width));
     spectrogramCanvas.height = 260;
@@ -29,286 +54,300 @@ export function createVisualizer({ audioElement, spectrogramCanvas, timelineCanv
     redraw();
   }
 
-function renderSpectrogramBase() {
-  const ctx = spectrogramBaseCanvas.getContext("2d");
+  function renderSpectrogramBase() {
 
-  const width = spectrogramBaseCanvas.width;
-  const height = spectrogramBaseCanvas.height;
+    const ctx = spectrogramBaseCanvas.getContext("2d");
 
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, width, height);
+    const width = spectrogramBaseCanvas.width;
+    const height = spectrogramBaseCanvas.height;
 
-  if (!audioBuffer) return;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0,0,width,height);
 
-  const data = audioBuffer.getChannelData(0);
-  const sampleRate = audioBuffer.sampleRate;
+    if (!audioBuffer) return;
 
-  const FFT_SIZE = 2048;
-  const HOP = 256;
+    const data = audioBuffer.getChannelData(0);
+    const sampleRate = audioBuffer.sampleRate;
 
-  const MIN_DB = -85;
-  const MAX_DB = -20;
+    const frames = Math.max(1, Math.floor((data.length - FFT_SIZE) / HOP));
+    const stepX = width / frames;
 
-  const minFreq = 800;
-  const maxFreq = 12000;
+    for (let frame = 0; frame < frames; frame++) {
 
-  const bins = FFT_SIZE / 2;
+      const start = frame * HOP;
 
-  const hann = new Float32Array(FFT_SIZE);
-  for (let i = 0; i < FFT_SIZE; i++) {
-    hann[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (FFT_SIZE - 1)));
-  }
+      for (let i = 0; i < FFT_SIZE; i++) {
+        real[i] = data[start + i] * hann[i];
+        imag[i] = 0;
+      }
 
-  const real = new Float32Array(FFT_SIZE);
-  const imag = new Float32Array(FFT_SIZE);
+      fftIterative(real, imag);
 
-  const frames = Math.floor((data.length - FFT_SIZE) / HOP);
-  const stepX = width / frames;
+      for (let bin = 2; bin < BINS; bin++) {
 
-  for (let frame = 0; frame < frames; frame++) {
+        const freq = (bin * sampleRate) / FFT_SIZE;
 
-    const start = frame * HOP;
+        if (freq < MIN_FREQ || freq > MAX_FREQ) continue;
 
-    for (let i = 0; i < FFT_SIZE; i++) {
-      real[i] = data[start + i] * hann[i];
-      imag[i] = 0;
-    }
+        const mag2 = real[bin]*real[bin] + imag[bin]*imag[bin];
 
-    fft(real, imag);
+        const db = 10 * Math.log10(mag2 + 1e-12);
 
-    for (let bin = 1; bin < bins; bin++) {
+        if (db < MIN_DB) continue;
 
-      const freq = (bin * sampleRate) / FFT_SIZE;
-      if (freq < minFreq || freq > maxFreq) continue;
+        let norm = (db - MIN_DB) / (MAX_DB - MIN_DB);
 
-      const mag = Math.sqrt(real[bin] * real[bin] + imag[bin] * imag[bin]);
-      const db = 20 * Math.log10(mag + 1e-10);
+        norm = Math.max(0, Math.min(1, norm));
 
-      if (db < MIN_DB) continue;
+        norm = Math.pow(norm, 0.75);
 
-      let norm = (db - MIN_DB) / (MAX_DB - MIN_DB);
-      norm = Math.max(0, Math.min(1, norm));
+        const logPos =
+          (Math.log(freq) - Math.log(MIN_FREQ)) /
+          (Math.log(MAX_FREQ) - Math.log(MIN_FREQ));
 
-      norm = Math.pow(norm, 0.6);
+        const y = height - logPos * height;
 
-      const logPos =
-        (Math.log(freq) - Math.log(minFreq)) /
-        (Math.log(maxFreq) - Math.log(minFreq));
+        const nextFreq = ((bin+1)*sampleRate)/FFT_SIZE;
 
-      const y = height - logPos * height;
+        const logPos2 =
+          (Math.log(nextFreq) - Math.log(MIN_FREQ)) /
+          (Math.log(MAX_FREQ) - Math.log(MIN_FREQ));
 
-      const nextFreq = ((bin + 1) * sampleRate) / FFT_SIZE;
+        const y2 = height - logPos2 * height;
 
-      const logPos2 =
-        (Math.log(nextFreq) - Math.log(minFreq)) /
-        (Math.log(maxFreq) - Math.log(minFreq));
+        const pixelHeight = Math.max(1, y - y2);
+        const pixelWidth = Math.ceil(stepX);
 
-      const y2 = height - logPos2 * height;
-
-      const pixelHeight = Math.max(1, y - y2);
-      const pixelWidth = Math.ceil(stepX);
-
-      ctx.fillStyle = inferno(norm);
-      ctx.fillRect(frame * stepX, y, pixelWidth, pixelHeight);
+        ctx.fillStyle = inferno(norm);
+        ctx.fillRect(frame*stepX, y, pixelWidth, pixelHeight);
+      }
     }
   }
-}
 
   function renderTimelineBase() {
+
     const ctx = timelineBaseCanvas.getContext("2d");
     const width = timelineBaseCanvas.width;
     const height = timelineBaseCanvas.height;
 
-    ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = "#101010";
-    ctx.fillRect(0, 0, width, height);
+    ctx.fillRect(0,0,width,height);
 
     if (audioBuffer) {
+
       const data = audioBuffer.getChannelData(0);
-      const centerY = height / 2;
-      const step = Math.ceil(data.length / width);
+      const center = height/2;
+      const step = Math.ceil(data.length/width);
 
       ctx.fillStyle = "#8a8a8a";
 
-      for (let x = 0; x < width; x++) {
-        let min = 1;
-        let max = -1;
+      for (let x=0;x<width;x++) {
 
-        const start = x * step;
-        const end = Math.min(start + step, data.length);
+        let min=1;
+        let max=-1;
 
-        for (let i = start; i < end; i++) {
-          const sample = data[i];
-          if (sample < min) min = sample;
-          if (sample > max) max = sample;
+        const start = x*step;
+        const end = Math.min(start+step,data.length);
+
+        for (let i=start;i<end;i++) {
+
+          const s=data[i];
+          if(s<min)min=s;
+          if(s>max)max=s;
         }
 
-        const y = (1 + min) * centerY;
-        const h = Math.max(1, (max - min) * centerY);
+        const y=(1+min)*center;
+        const h=Math.max(1,(max-min)*center);
 
-        ctx.fillRect(x, y, 1, h);
+        ctx.fillRect(x,y,1,h);
       }
     }
 
-    if (duration > 0) {
-      for (const d of detections) {
-        const startX = (Number(d.start || 0) / duration) * width;
-        const endX = (Number(d.end || 0) / duration) * width;
+    if(duration>0){
 
-        ctx.fillStyle = "rgba(121,194,123,0.28)";
-        ctx.fillRect(startX, 0, Math.max(2, endX - startX), height);
+      for(const d of detections){
+
+        const startX=(d.start/duration)*width;
+        const endX=(d.end/duration)*width;
+
+        ctx.fillStyle="rgba(121,194,123,0.25)";
+        ctx.fillRect(startX,0,Math.max(2,endX-startX),height);
       }
     }
   }
 
-  function redrawSpectrogram() {
-    const width = spectrogramCanvas.width;
-    const height = spectrogramCanvas.height;
+  function redrawSpectrogram(){
 
-    spectCtx.clearRect(0, 0, width, height);
-    spectCtx.drawImage(spectrogramBaseCanvas, 0, 0);
+    const w=spectrogramCanvas.width;
+    const h=spectrogramCanvas.height;
 
-    drawPlayhead(spectCtx, width, height);
+    spectCtx.clearRect(0,0,w,h);
+    spectCtx.drawImage(spectrogramBaseCanvas,0,0);
+
+    drawPlayhead(spectCtx,w,h);
   }
 
-  function redrawTimeline() {
-    const width = timelineCanvas.width;
-    const height = timelineCanvas.height;
+  function redrawTimeline(){
 
-    timelineCtx.clearRect(0, 0, width, height);
-    timelineCtx.drawImage(timelineBaseCanvas, 0, 0);
+    const w=timelineCanvas.width;
+    const h=timelineCanvas.height;
 
-    drawPlayhead(timelineCtx, width, height);
+    timelineCtx.clearRect(0,0,w,h);
+    timelineCtx.drawImage(timelineBaseCanvas,0,0);
+
+    drawPlayhead(timelineCtx,w,h);
   }
 
-  function drawPlayhead(ctx, width, height) {
-    if (!duration) return;
+  function drawPlayhead(ctx,w,h){
 
-    const current = audioElement.currentTime || 0;
-    const x = (current / duration) * width;
+    if(!duration)return;
 
-    ctx.strokeStyle = "#5ea8ff";
-    ctx.lineWidth = 2;
+    const x=(audioElement.currentTime/duration)*w;
+
+    ctx.strokeStyle="#5ea8ff";
+    ctx.lineWidth=2;
+
     ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, height);
+    ctx.moveTo(x,0);
+    ctx.lineTo(x,h);
     ctx.stroke();
   }
 
-  function redraw() {
+  function redraw(){
+
     redrawSpectrogram();
     redrawTimeline();
   }
 
-  function seekFromCanvasClick(canvas, event) {
-    if (!duration) return;
+  function seekFromCanvasClick(canvas,event){
 
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const ratio = x / rect.width;
+    if(!duration)return;
 
-    audioElement.currentTime = ratio * duration;
+    const rect=canvas.getBoundingClientRect();
+    const x=event.clientX-rect.left;
+
+    audioElement.currentTime=(x/rect.width)*duration;
+
     redraw();
   }
 
-  spectrogramCanvas.addEventListener("click", (e) => seekFromCanvasClick(spectrogramCanvas, e));
-  timelineCanvas.addEventListener("click", (e) => seekFromCanvasClick(timelineCanvas, e));
+  spectrogramCanvas.addEventListener("click",e=>seekFromCanvasClick(spectrogramCanvas,e));
+  timelineCanvas.addEventListener("click",e=>seekFromCanvasClick(timelineCanvas,e));
 
-  audioElement.addEventListener("timeupdate", redraw);
-  audioElement.addEventListener("seeked", redraw);
-  audioElement.addEventListener("play", redraw);
-  audioElement.addEventListener("pause", redraw);
+  audioElement.addEventListener("timeupdate",redraw);
+  audioElement.addEventListener("seeked",redraw);
+  audioElement.addEventListener("play",redraw);
+  audioElement.addEventListener("pause",redraw);
 
-  window.addEventListener("resize", resizeCanvases);
+  window.addEventListener("resize",resizeCanvases);
 
   resizeCanvases();
 
   return {
-    setAudioBuffer(nextAudioBuffer) {
-      audioBuffer = nextAudioBuffer || null;
+
+    setAudioBuffer(buf){
+
+      audioBuffer=buf||null;
+
       renderSpectrogramBase();
       renderTimelineBase();
       redraw();
     },
 
-    setData(nextDetections, nextDuration) {
-      detections = Array.isArray(nextDetections) ? nextDetections : [];
-      duration = Number(nextDuration || 0);
+    setData(nextDetections,nextDuration){
+
+      detections=Array.isArray(nextDetections)?nextDetections:[];
+      duration=Number(nextDuration||0);
+
       renderTimelineBase();
       redraw();
     },
 
-    redraw() {
-      redraw();
-    },
+    redraw(){ redraw(); },
 
-    reset() {
-      audioBuffer = null;
-      detections = [];
-      duration = 0;
+    reset(){
+
+      audioBuffer=null;
+      detections=[];
+      duration=0;
+
       renderSpectrogramBase();
       renderTimelineBase();
       redraw();
-    },
+    }
   };
 }
 
-function inferno(v) {
+function inferno(v){
 
-  const colormap = [
-    [0,0,4],[31,12,72],[85,15,109],[136,34,106],
-    [186,54,85],[227,89,51],[249,140,10],[249,201,50],[252,255,164]
-  ]
+  const map=[
+    [0,0,4],[30,8,60],[60,10,100],[90,20,120],
+    [140,30,110],[190,60,80],[230,110,40],[250,180,30]
+  ];
 
-  v = Math.max(0, Math.min(1, v))
+  v=Math.max(0,Math.min(1,v));
 
-  const i = Math.floor(v * (colormap.length - 1))
-  const t = v * (colormap.length - 1) - i
+  const i=Math.floor(v*(map.length-1));
+  const t=v*(map.length-1)-i;
 
-  const c1 = colormap[i]
-  const c2 = colormap[i + 1] || c1
+  const a=map[i];
+  const b=map[i+1]||a;
 
-  const r = Math.floor(c1[0] + (c2[0] - c1[0]) * t)
-  const g = Math.floor(c1[1] + (c2[1] - c1[1]) * t)
-  const b = Math.floor(c1[2] + (c2[2] - c1[2]) * t)
+  const r=a[0]+(b[0]-a[0])*t;
+  const g=a[1]+(b[1]-a[1])*t;
+  const b2=a[2]+(b[2]-a[2])*t;
 
-  return `rgb(${r},${g},${b})`
+  return `rgb(${r|0},${g|0},${b2|0})`;
 }
 
-function fft(real, imag) {
-  const n = real.length
-  if (n <= 1) return
+function fftIterative(real,imag){
 
-  const half = n / 2
+  const n=real.length;
 
-  const evenReal = new Float32Array(half)
-  const evenImag = new Float32Array(half)
-  const oddReal = new Float32Array(half)
-  const oddImag = new Float32Array(half)
+  let j=0;
 
-  for (let i = 0; i < half; i++) {
-    evenReal[i] = real[i * 2]
-    evenImag[i] = imag[i * 2]
-    oddReal[i] = real[i * 2 + 1]
-    oddImag[i] = imag[i * 2 + 1]
+  for(let i=1;i<n;i++){
+
+    let bit=n>>1;
+
+    while(j&bit){
+
+      j^=bit;
+      bit>>=1;
+    }
+
+    j|=bit;
+
+    if(i<j){
+
+      [real[i],real[j]]=[real[j],real[i]];
+      [imag[i],imag[j]]=[imag[j],imag[i]];
+    }
   }
 
-  fft(evenReal, evenImag)
-  fft(oddReal, oddImag)
+  for(let len=2;len<=n;len<<=1){
 
-  for (let k = 0; k < half; k++) {
-    const angle = (-2 * Math.PI * k) / n
+    const half=len>>1;
+    const step=n/len;
 
-    const cos = Math.cos(angle)
-    const sin = Math.sin(angle)
+    for(let i=0;i<n;i+=len){
 
-    const tre = cos * oddReal[k] - sin * oddImag[k]
-    const tim = sin * oddReal[k] + cos * oddImag[k]
+      for(let k=0;k<half;k++){
 
-    real[k] = evenReal[k] + tre
-    imag[k] = evenImag[k] + tim
+        const idx=k*step;
 
-    real[k + half] = evenReal[k] - tre
-    imag[k + half] = evenImag[k] - tim
+        const cos=Math.cos(-2*Math.PI*k/len);
+        const sin=Math.sin(-2*Math.PI*k/len);
+
+        const tre=real[i+k+half]*cos - imag[i+k+half]*sin;
+        const tim=real[i+k+half]*sin + imag[i+k+half]*cos;
+
+        real[i+k+half]=real[i+k]-tre;
+        imag[i+k+half]=imag[i+k]-tim;
+
+        real[i+k]+=tre;
+        imag[i+k]+=tim;
+      }
+    }
   }
 }

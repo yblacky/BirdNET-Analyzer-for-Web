@@ -207,9 +207,7 @@ async def startup() -> None:
     logger.info("App started")
     logger.info("Supported extensions: %s", sorted(SUPPORTED_EXT))
     logger.info(
-        "BirdNET config: min_conf=%s sensitivity=%s overlap=%s merge_consecutive=%s batch_size=%s threads=%s",
-        settings.min_confidence,
-        settings.sensitivity,
+        "BirdNET config: overlap=%s merge_consecutive=%s batch_size=%s threads=%s",
         settings.overlap,
         settings.merge_consecutive,
         settings.batch_size,

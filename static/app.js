@@ -1,11 +1,8 @@
 import { createJob, getAppConfig, getJob, getLanguages } from "./api.js";
 import { bindFileDropAndSelect, getIsoWeek, prepareSelectedFile } from "./audio.js";
 import {
-  bindConfidenceLabel,
-  bindExportButtons,
   el,
   formatTime,
-  getConfidenceThreshold,
   renderResults,
   setAudioMeta,
   setLanguages,
@@ -107,9 +104,6 @@ function bindEvents() {
       el.audioPlayer.pause();
     }
   });
-
-  bindConfidenceLabel(applyFilters);
-  bindExportButtons(() => getFilteredDetections());
 }
 
 async function handleSelectedFile(file) {
@@ -240,7 +234,7 @@ async function pollJob(jobId) {
       state.detections = job.result?.detections || [];
       setRawJson(job);
       applyFilters();
-      visualizer.setData(getFilteredDetections(), state.audioDuration);
+      visualizer.setData(state.detections, state.audioDuration);
       setStatus("Analysis completed.");
       return;
     }
@@ -254,16 +248,11 @@ async function pollJob(jobId) {
   }
 }
 
-function getFilteredDetections() {
-  const threshold = getConfidenceThreshold();
-  return state.detections.filter((d) => Number(d.confidence || 0) >= threshold);
-}
-
 function applyFilters() {
-  const filtered = getFilteredDetections();
-  renderResults(filtered, onDetectionSelect);
-  setResultsMeta(filtered, state.detections.length);
-  visualizer.setData(filtered, state.audioDuration);
+  const detections = state.detections;
+  renderResults(detections, onDetectionSelect);
+  setResultsMeta(detections, state.detections.length);
+  visualizer.setData(detections, state.audioDuration);
 }
 
 function onDetectionSelect(det) {

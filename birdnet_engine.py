@@ -14,12 +14,21 @@ logger = logging.getLogger(__name__)
 
 def analyze_audio(audio_path: str, lat=None, lon=None, week=None) -> list[dict[str, Any]]:
     with tempfile.TemporaryDirectory() as tmpdir:
+
+        profile = settings.birdnet_params(lat, lon)
+
+        logger.info(
+            "BirdNET profile=%s",
+            "geo" if lat is not None and lon is not None else "no-geo",
+        )
+
         candidate_kwargs: dict[str, Any] = {
             "audio_input": audio_path,
             "output": tmpdir,
             "rtype": "table",
-            "min_conf": settings.min_confidence,
-            "sensitivity": settings.sensitivity,
+
+            **profile,
+
             "overlap": settings.overlap,
             "merge_consecutive": settings.merge_consecutive,
             "batch_size": settings.batch_size,

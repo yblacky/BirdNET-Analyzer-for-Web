@@ -22,15 +22,21 @@ class Settings(BaseSettings):
         ".aac",
     )
 
+    # -------- BirdNET profile WITH geolocation --------
+    geo_min_confidence: float = 0.45
+    geo_sensitivity: float = 1.25
+
+    # -------- BirdNET profile WITHOUT geolocation --------
+    nogeo_min_confidence: float = 0.6
+    nogeo_sensitivity: float = 1.1
+
     # BirdNET tuning
-    min_confidence: float = 0.45
-    sensitivity: float = 1.0
-    overlap: float = 0.3
+    overlap: float = 0.45
     merge_consecutive: bool = True
-    merge_gap_tolerance_seconds: float = 1.3
-    batch_size: int = 1
+    merge_gap_tolerance_seconds: float = 1.8
+    batch_size: int = 2
     threads: int = 2
-    locale: str = "en"
+    locale: str = "eu"
 
     # Frontend / job polling
     poll_interval_ms: int = 500
@@ -43,5 +49,16 @@ class Settings(BaseSettings):
     def max_upload_size_bytes(self) -> int:
         return self.max_upload_size_mb * 1024 * 1024
 
+    def birdnet_params(self, lat=None, lon=None):
+        if lat is not None or lon is not None:
+            return {
+                "min_conf": self.geo_min_confidence,
+                "sensitivity": self.geo_sensitivity,
+            }
+
+        return {
+            "min_conf": self.nogeo_min_confidence,
+            "sensitivity": self.nogeo_sensitivity,
+        }
 
 settings = Settings()

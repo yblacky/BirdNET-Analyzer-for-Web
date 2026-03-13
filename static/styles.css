@@ -103,7 +103,7 @@ body {
 .dropzone {
   border: 2px dashed var(--border-strong);
   border-radius: 20px;
-  padding: 34px 18px;
+  padding: 22px 14px;
   text-align: center;
   background:
     radial-gradient(circle at top, rgba(47, 125, 246, 0.05), transparent 45%),
@@ -123,7 +123,7 @@ body {
 }
 
 .dropzone-icon {
-  font-size: 2.2rem;
+  font-size: 1.6rem;
   color: var(--muted);
   margin-bottom: 10px;
 }
@@ -431,14 +431,29 @@ button:disabled {
 }
 
 .result-main {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  align-items: center;
+  gap: 12px;
 }
 
 .result-text {
   min-width: 0;
+}
+
+.species-img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #eef2f7;
+  filter: blur(6px);
+  transition: filter 0.2s ease;
+}
+
+.species-img.loaded {
+  filter: none;
 }
 
 .species-row {
@@ -518,7 +533,7 @@ button:disabled {
   color: #d8e1f0;
   border: 1px solid #1c2a40;
   overflow: auto;
-  max-height: 420px;
+  max-height: 1000px;
   font-size: 0.9rem;
   line-height: 1.45;
 }
