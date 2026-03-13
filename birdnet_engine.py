@@ -84,14 +84,12 @@ def merge_detections(detections: list[dict[str, Any]]) -> list[dict[str, Any]]:
     for detection in detections[1:]:
         last = merged[-1]
 
-        same_species = (
-            detection["species"] == last["species"]
-            and detection.get("scientific_name") == last.get("scientific_name")
-        )
+        same_species = detection["species"] == last["species"]
 
-        directly_adjacent = abs(detection["start"] - last["end"]) < 1e-6
+        gap_tolerance = 1.0  # seconds
+        close_enough = abs(detection["start"] - last["end"]) <= gap_tolerance
 
-        if same_species and directly_adjacent:
+        if same_species and close_enough:
             last["end"] = detection["end"]
             last["confidence"] = max(last["confidence"], detection["confidence"])
         else:

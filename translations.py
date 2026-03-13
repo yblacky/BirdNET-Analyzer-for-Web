@@ -64,8 +64,8 @@ def translate_detection_names(detections: list[dict], lang: str):
 
         enriched = {
             **item,
-            "species_en": english,
             "species_localized": localized_name,
+            "scientific_name": scientific,
         }
 
         localized.append(enriched)

@@ -6,15 +6,19 @@ from fastapi.staticfiles import StaticFiles
 
 import tempfile
 from pathlib import Path
+import logging
 import subprocess
 import shutil
 
+from analyzeresponsedto import AnalyzeResponse
 from birdnet_engine import analyze_audio
 from translations import (
     get_supported_languages,
     load_language_map,
     translate_detection_names,
 )
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="BirdNET Local Web UI")
 
@@ -39,8 +43,6 @@ def ensure_ffmpeg():
 
 
 def convert_audio(input_path: Path, output_path: Path):
-    ensure_ffmpeg()
-
     result = subprocess.run(
         [
             "ffmpeg",
@@ -53,12 +55,17 @@ def convert_audio(input_path: Path, output_path: Path):
             "-y",
             str(output_path),
         ],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        capture_output=True,
+        text=True,
     )
 
     if result.returncode != 0:
-        raise RuntimeError("ffmpeg failed")
+        raise RuntimeError(f"ffmpeg failed: {result.stderr.strip()}")
+
+@app.on_event("startup")
+async def startup():
+    ensure_ffmpeg()
+
 
 @app.get("/")
 async def index():
@@ -90,7 +97,7 @@ async def api_translations(lang: str):
     }
 
 
-@app.post("/api/analyze")
+@app.post("/api/analyze", response_model=AnalyzeResponse)
 async def analyze(
     file: UploadFile = File(...),
     lat: float | None = Form(None),
@@ -98,6 +105,7 @@ async def analyze(
     week: int | None = Form(None),
     lang: str = Form("en_uk"),
 ):
+    logger.info("Analyzing file %s with lang=%s lat=%s lon=%s week=%s", file.filename, lang, lat, lon, week)
     suffix = Path(file.filename or "").suffix.lower()
 
     if suffix not in SUPPORTED_EXT:
@@ -108,6 +116,12 @@ async def analyze(
     
     if lang not in get_supported_languages():
         raise HTTPException(400, f"Language '{lang}' not supported")
+
+    if lat is not None and not (-90 <= lat <= 90):
+        raise HTTPException(status_code=400, detail="lat must be between -90 and 90")
+
+    if lon is not None and not (-180 <= lon <= 180):
+        raise HTTPException(status_code=400, detail="lon must be between -180 and 180")
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
@@ -132,6 +146,7 @@ async def analyze(
                 week,
             )
         except Exception as exc:
+            logger.exception("BirdNET analyze failed")
             raise HTTPException(status_code=500, detail=f"BirdNET analyze failed: {exc}") from exc
 
         localized = translate_detection_names(detections, lang)

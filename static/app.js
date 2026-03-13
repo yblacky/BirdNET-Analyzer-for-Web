@@ -350,12 +350,12 @@ const state = {
 
           const count = state.detections.length;
           const uniqueSpecies = new Set(
-            state.detections.map((d) => d.species_localized || d.species_en),
+            state.detections.map((d) => d.species_localized || d.species || d.scientific_name),
           ).size;
 
           el.resultsMeta.textContent = `${count} Hits · ${uniqueSpecies} Species`;
 
-          setStatus("Analysis completet.");
+          setStatus("Analysis completed.");
         } catch (err) {
           console.error(err);
           setStatus(err.message || "Analysis failed.", true);
@@ -377,8 +377,8 @@ const state = {
 
         el.results.innerHTML = detections
           .map((d, index) => {
-            const localized = escapeHtml(d.species_localized || d.species_en);
-            const english = escapeHtml(d.species_en || "");
+            const localized = escapeHtml(d.species_localized || d.species || "");
+            const english = escapeHtml(d.species || "");
             const scientific = escapeHtml(d.scientific_name || "");
             const conf = Number(d.confidence * 100 || 0).toFixed(2);
             const start = Number(d.start || 0);
