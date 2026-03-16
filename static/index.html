@@ -143,15 +143,19 @@
               <audio id="audioPlayer"></audio>
 
               <div class="spectrogram-wrap">
-                <div id="visualizerLoading" class="visualizer-loading hidden">
-                  <div class="spinner"></div>
-                  <div class="visualizer-loading-text">
-                    Rendering audio view...
-                  </div>
-                </div>
+                <canvas id="freqAxisCanvas" width="60" height="260"></canvas>
 
-                <canvas id="spectrogramCanvas" height="260"></canvas>
-                <canvas id="timelineCanvas" height="72"></canvas>
+                <div class="spectrogram-stack">
+                  <div id="visualizerLoading" class="visualizer-loading hidden">
+                    <div class="spinner"></div>
+                    <div class="visualizer-loading-text">
+                      Rendering audio view...
+                    </div>
+                  </div>
+
+                  <canvas id="spectrogramCanvas" height="260"></canvas>
+                  <canvas id="timelineCanvas" height="72"></canvas>
+                </div>
               </div>
 
               <ul class="legend">

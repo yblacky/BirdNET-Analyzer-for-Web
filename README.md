@@ -1,5 +1,9 @@
-![Python](https://img.shields.io/badge/python-3.10-blue)
-![FastAPI](https://img.shields.io/badge/fastapi-backend-green)
+![Python](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi&logoColor=white)
+![BirdNET](https://img.shields.io/badge/BirdNET-Analyzer-orange)
+![Spectrogram Renderer](https://img.shields.io/badge/Spectrogram-FFT_Renderer-purple)
+![FFmpeg](https://img.shields.io/badge/FFmpeg-audio_processing-green?logo=ffmpeg&logoColor=white)
+![WebUI](https://img.shields.io/badge/Web_UI-JavaScript-yellow?logo=javascript&logoColor=black)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
 # BirdNET-Analyzer-for-Web
@@ -115,6 +119,7 @@ The **en_uk.txt** label file is required due it's the default language.
 
 - spectrogram rendering
 - waveform timeline
+- frequency axis (Hz / kHz)
 - detection overlays
 - interactive playhead
 

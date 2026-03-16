@@ -30,6 +30,7 @@ const visualizer = createVisualizer({
   audioElement: el.audioPlayer,
   spectrogramCanvas: el.spectrogramCanvas,
   timelineCanvas: el.timelineCanvas,
+  freqAxisCanvas: el.freqAxisCanvas,
 });
 
 async function init() {

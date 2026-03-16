@@ -1,13 +1,14 @@
-import { inferno, turbo, viridis, magma } from "./js-colormaps.js";
+import { inferno } from "./js-colormaps.js";
 
 function colormap(v) {
   return inferno(v);
 }
 
-export function createVisualizer({ audioElement, spectrogramCanvas, timelineCanvas }) {
+export function createVisualizer({ audioElement, spectrogramCanvas, timelineCanvas, freqAxisCanvas }) {
 
   const spectCtx = spectrogramCanvas.getContext("2d");
   const timelineCtx = timelineCanvas.getContext("2d");
+  const axisCtx = freqAxisCanvas.getContext("2d");
 
   const spectrogramBaseCanvas = document.createElement("canvas");
   const timelineBaseCanvas = document.createElement("canvas");
@@ -46,6 +47,11 @@ export function createVisualizer({ audioElement, spectrogramCanvas, timelineCanv
     return 1127 * Math.log(1 + hz/700);
   }
 
+  function hzToY(hz, height, melMin, melSpan) {
+    const mel = hzToMel(hz);
+    return height * (1 - (mel - melMin) / melSpan);
+  }
+
   function resizeCanvases() {
 
     const spectRect = spectrogramCanvas.getBoundingClientRect();
@@ -61,9 +67,11 @@ export function createVisualizer({ audioElement, spectrogramCanvas, timelineCanv
 
     timelineBaseCanvas.width = timelineCanvas.width;
     timelineBaseCanvas.height = timelineCanvas.height;
+    freqAxisCanvas.height = spectrogramCanvas.height;
 
     renderSpectrogramBase();
     renderTimelineBase();
+    drawFrequencyAxis();
     redraw();
   }
 
@@ -74,7 +82,7 @@ export function createVisualizer({ audioElement, spectrogramCanvas, timelineCanv
     const width = spectrogramBaseCanvas.width;
     const height = spectrogramBaseCanvas.height;
 
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = "#161616";
     ctx.fillRect(0,0,width,height);
 
     if (!audioBuffer) return;
@@ -190,7 +198,7 @@ export function createVisualizer({ audioElement, spectrogramCanvas, timelineCanv
     const width = timelineBaseCanvas.width;
     const height = timelineBaseCanvas.height;
 
-    ctx.fillStyle = "#101010";
+    ctx.fillStyle = "#161616";
     ctx.fillRect(0, 0, width, height);
 
     if (audioBuffer) {
@@ -239,6 +247,8 @@ export function createVisualizer({ audioElement, spectrogramCanvas, timelineCanv
     spectCtx.clearRect(0,0,w,h);
     spectCtx.drawImage(spectrogramBaseCanvas,0,0);
 
+    drawFrequencyAxis(spectCtx,w,h);
+
     drawPlayhead(spectCtx,w,h);
   }
 
@@ -265,6 +275,66 @@ export function createVisualizer({ audioElement, spectrogramCanvas, timelineCanv
     ctx.moveTo(x,0);
     ctx.lineTo(x,h);
     ctx.stroke();
+  }
+
+  function drawFrequencyAxis() {
+
+    const ctx = axisCtx;
+    const width = freqAxisCanvas.width;
+    const height = freqAxisCanvas.height;
+
+    ctx.clearRect(0,0,width,height);
+
+    ctx.fillStyle = "#161616";
+    ctx.fillRect(0,0,width,height);
+
+    const melMin = hzToMel(MIN_FREQ);
+    const melMax = hzToMel(MAX_FREQ);
+    const melSpan = melMax - melMin;
+
+    const ticks = [
+      250,
+      500,
+      1000,
+      2000,
+      4000,
+      8000,
+      12000
+    ];
+
+    ctx.strokeStyle = "#aaa";
+    ctx.fillStyle = "#aaa";
+
+    ctx.font = "12px monospace";
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "left";
+
+    const margin = 8;
+
+    for (const hz of ticks) {
+
+      if (hz < MIN_FREQ || hz > MAX_FREQ) continue;
+
+      const mel = hzToMel(hz);
+
+      let y = height * (1 - (mel - melMin) / melSpan);
+
+      y = Math.max(margin, Math.min(height - margin, y));
+
+      y = Math.round(y) + 0.5;
+
+      ctx.beginPath();
+      ctx.moveTo(width-8, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+
+      const label =
+        hz >= 1000
+          ? (hz/1000).toFixed(0) + " kHz"
+          : hz + " Hz";
+
+      ctx.fillText(label, 6, y);
+    }
   }
 
   function redraw(){

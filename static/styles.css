@@ -340,10 +340,31 @@ button:disabled {
 
 .spectrogram-wrap {
   position: relative;
+  padding-top: 0.75rem;
+  padding-left: 0.5rem;
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid var(--border);
+  background-color: #161616;
+
+  display: flex;
+  align-items: flex-start;
+}
+
+#freqAxisCanvas {
+  width: 60px;
+  height: 260px;
   background: #161616;
+  padding-right: 2px;
+}
+
+.spectrogram-stack {
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+
+  padding-left: 6px;
 }
 
 #spectrogramCanvas,
@@ -353,7 +374,8 @@ button:disabled {
 }
 
 #timelineCanvas {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255,255,255,0.1);
+  background: #161616;
 }
 
 .visualizer-loading {

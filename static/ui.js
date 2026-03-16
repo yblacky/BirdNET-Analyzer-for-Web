@@ -32,6 +32,7 @@ export const el = {
   progressFill: document.getElementById("progressFill"),
   spectrogramCanvas: document.getElementById("spectrogramCanvas"),
   timelineCanvas: document.getElementById("timelineCanvas"),
+  freqAxisCanvas: document.getElementById("freqAxisCanvas"),
   visualizerLoading: document.getElementById("visualizerLoading"),
   audioMeta: document.getElementById("audioMeta"),
 };
