@@ -1,4 +1,10 @@
+![Python](https://img.shields.io/badge/python-3.10-blue)
+![FastAPI](https://img.shields.io/badge/fastapi-backend-green)
+![License](https://img.shields.io/badge/license-MIT-blue)
+
 # BirdNET-Analyzer-for-Web
+
+<img src="docs/overview.png" alt="UI-Blank-Overview" width="auto" height="500px">
 
 Minimal web interface for the **BirdNET Analyzer**.
 Upload an audio file, optionally filter by **date / week** and **geolocation**, and visualizing detected bird species together with their timestamps and spectrogram.
@@ -45,6 +51,10 @@ Localization of species names
    │
 Result visualization
 ```
+
+### Example Result:
+
+<img src="docs/result_podiceps_cristatus.png" alt="Result" width="auto" height="500px">
 
 ---
 
@@ -145,8 +155,8 @@ Two analysis profiles are used.
 When latitude and longitude are available:
 
 ```
-geo_min_confidence = 0.4
-geo_sensitivity = 1.3
+geo_min_confidence = 0.45
+geo_sensitivity = 1.25
 ```
 
 This allows the model to detect weaker signals because geographic priors reduce unlikely species.
@@ -172,42 +182,97 @@ Main modules:
 
 ```
 static/
+├ api.js
 ├ app.js
-├ ui.js
-├ visualizer.js
-├ wiki.js
+├ audio.js
+├ index.html
+├ js-colormaps.js
 ├ styles.css
+├ ui.js
+├ wave.js
+├ wiki.js
 ```
 
 Responsibilities:
 
-| File          | Purpose                             |
-| ------------- | ----------------------------------- |
-| app.js        | application bootstrap               |
-| ui.js         | UI rendering and event handling     |
-| visualizer.js | spectrogram and waveform rendering  |
-| wiki.js       | Wikipedia species image integration |
-| styles.css    | UI styling                          |
+| File            | Purpose                             |
+| --------------- | ----------------------------------- |
+| api.js          | backend api calls                   |
+| app.js          | application bootstrap               |
+| audio.js        | Audio file handling                 |
+| index.html      | Web-UI                              |
+| js-colormaps.js | Provides colormap for spectrogram   |
+| styles.css      | UI styling                          |
+| ui.js           | UI rendering and event handling     |
+| wave.js         | spectrogram and waveform rendering  |
+| wiki.js         | Wikipedia species image integration |
 
 ---
 
 ## Spectrogram
 
-Audio visualization is generated in the browser.
+The audio spectrogram is generated entirely in the browser using a custom FFT-based pipeline.
+The goal is to visualize time–frequency energy of the signal in a perceptually meaningful way.
 
-Processing pipeline:
+![Audio-Spectogram with waveform](docs/audio_spectogram.png)
+
+#### Processing pipeline:
 
 ```
 Audio Buffer
 │
 ▼
-FFT analysis
+frame segmentation (sliding window with overlap)
 │
 ▼
-frequency energy mapping
+windowing (Hann window to reduce spectral leakage)
 │
 ▼
-canvas rendering
+FFT (frequency decomposition)
+│
+▼
+power spectrum (magnitude² → energy per bin)
+│
+▼
+logarithmic scaling (convert energy to decibels)
+│
+▼
+dynamic range normalization (limit to ~70 dB window)
+│
+▼
+logarithmic-frequency interpolation (resample FFT bins to a mel-like axis)
+│
+▼
+contrast compression (log compression + gamma)
+│
+▼
+color mapping (Inferno perceptual colormap)
+│
+▼
+pixel buffer rendering
+│
+▼
+canvas display
+```
+
+For color mapping, the renderer uses the **Inferno** colormap from the Matplotlib color family.
+
+The implementation is based on the Matplotlib colormaps provided by:
+https://github.com/timothygebhard/js-colormaps
+
+For performance, a 256-entry color table is generated once and reused during rendering.
+
+### Frame analysis
+
+The audio signal is analyzed using a Short Time Fourier Transform (STFT).
+
+Each frame:
+
+```
+audio segment
+→ Hann window
+→ FFT
+→ frequency bins
 ```
 
 Typical parameters:
@@ -217,7 +282,19 @@ FFT size: 2048
 hop size: 256
 ```
 
-This provides a good balance between time and frequency resolution.
+At a sample rate of 44.1 kHz this corresponds roughly to
+
+```
+time window ≈ 46 ms
+frame step ≈ 5.8 ms
+```
+
+This provides high time overlap and good frequency resolution.
+
+Only a subset of the spectrum is visualized:
+`150 Hz – 12 kHz`
+
+This removes low-frequency noise and focuses on the most relevant region for bird vocalizations.
 
 ---
 
@@ -239,13 +316,15 @@ Images are cached to avoid repeated API requests.
 
 The UI expects a backend providing the following endpoints:
 
-- GET / # For static Website
+```
+- GET /                                   # Providing the  static website
 - POST /api/analyze
 - GET /api/meta/languages
 - GET /api/meta/translations/{lang}
 - GET /api/meta/config
 - GET /api/jobs
 - GET /api/jobs/{job_id}
+```
 
 ---
 
@@ -268,3 +347,8 @@ The UI will call the BirdNET Analyzer running on the same host.
 This project is only a **frontend helper for BirdNET Analyzer**.
 
 All machine learning inference and bird detection logic are handled entirely by BirdNET.
+
+## License
+
+This project is licensed under the MIT License.
+See the LICENSE file for details.
